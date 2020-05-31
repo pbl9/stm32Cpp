@@ -2,7 +2,8 @@
 
 
 IO::GPIO::GPIO(enum Port::port port,uint8_t pinNumber,enum PinType pinType,
-		enum PinSpeed pinSpeed,enum Pull::PullType pullType){
+		enum PinSpeed pinSpeed,enum Pull::PullType pullType,
+		enum Periph::Periph periphType){
 	this->pinNumber=pinNumber;
 	if(port==Port::A){ gpio=GPIOA; }
 	else if(port==Port::B){ gpio=GPIOB; }
@@ -24,7 +25,8 @@ IO::GPIO::GPIO(enum Port::port port,uint8_t pinNumber,enum PinType pinType,
 	}else if(this->pinType == ANALOG){
 		LL_GPIO_SetPinMode(gpio,pinMask,LL_GPIO_MODE_ANALOG);
 	}else if(this->pinType == PERIPH){
-		//as alternate
+		LL_GPIO_SetPinMode(gpio,pinMask,LL_GPIO_MODE_ALTERNATE);
+		setPeripheralType(periphTypeToLL(periphType));
 	}
 	setSpeed(pinSpeed);
 }
@@ -41,7 +43,6 @@ void IO::GPIO::setSpeed(enum PinSpeed pinSpeed){
 	else if(pinSpeed==MEDIUM) { llPinSpeed=LL_GPIO_SPEED_FREQ_MEDIUM; }
 	else if(pinSpeed==HIGH) { llPinSpeed=LL_GPIO_SPEED_FREQ_HIGH; }
 	else if(pinSpeed==VERY_HIGH) { llPinSpeed=LL_GPIO_SPEED_FREQ_VERY_HIGH; }
-	else { }
 	LL_GPIO_SetPinSpeed(gpio,pinMask,llPinSpeed);
 }
 void IO::GPIO::write(bool state){
@@ -58,7 +59,7 @@ void IO::GPIO::setPull(enum Pull::PullType pullType){
 	uint32_t llPullType;
 	if(pullType==Pull::DOWN){ llPullType=LL_GPIO_PULL_DOWN; }
 	else if(pullType==Pull::UP) { llPullType=LL_GPIO_PULL_UP; }
-	else { llPullType==LL_GPIO_PULL_NO; }
+	else { llPullType=LL_GPIO_PULL_NO; }
 	LL_GPIO_SetPinPull(gpio,pinMask,llPullType);
 }
 bool IO::GPIO::read(){
@@ -71,6 +72,20 @@ bool IO::GPIO::read(){
 	}else{
 		return false;
 	}
+}
+uint32_t IO::GPIO::periphTypeToLL(Periph::Periph periph){
+	uint32_t llPeriphPinType=0;
+	if(periph==Periph::usart1){ llPeriphPinType=LL_GPIO_AF_7; }
+	else if(periph==Periph::usart2) { llPeriphPinType=LL_GPIO_AF_7; }
+	else if(periph==Periph::usart6) { llPeriphPinType=LL_GPIO_AF_8; }
+	else if(periph==Periph::i2c1) { llPeriphPinType=LL_GPIO_AF_4; }
+	else if(periph==Periph::i2c2) { llPeriphPinType=LL_GPIO_AF_4; }
+	else if(periph==Periph::spi1) { llPeriphPinType=LL_GPIO_AF_5; }
+	else if(periph==Periph::spi2) { llPeriphPinType=LL_GPIO_AF_6; }
+	else if(periph==Periph::tim1 || periph==Periph::tim2) { llPeriphPinType=LL_GPIO_AF_1; }
+	else if(periph==Periph::tim3 || periph==Periph::tim4 ||
+			periph==Periph::tim5) { llPeriphPinType=LL_GPIO_AF_2; }
+	return llPeriphPinType;
 }
 void IO::GPIO::setPeripheralType(uint32_t alternate){
 	if(pinNumber<=7){

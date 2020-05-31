@@ -5,11 +5,16 @@
 #include "stm32f4xx_ll_rcc.h"
 #include "stm32f4xx_ll_bus.h"
 
+
 namespace Port{
 	enum port {A,B,C,D,E};
 };
 namespace Pull{
 	enum PullType {UP,DOWN,FLOATING};
+};
+namespace Periph{
+	enum Periph {none,usart1,usart2,usart6,i2c1,i2c2,spi1,spi2,
+		tim1,tim2,tim3,tim4,tim5};
 };
 
 namespace IO{
@@ -26,12 +31,14 @@ namespace IO{
 		bool outputState;
 		bool inputState;
 		void enablePortClock();
+		uint32_t periphTypeToLL(Periph::Periph periph);
+		void setPeripheralType(uint32_t alternate);
 		void setSpeed(enum PinSpeed pinSpeed);
 		void setPull(enum Pull::PullType pullType);
 	public:
 		GPIO(enum Port::port port,uint8_t pinNumber,enum PinType pinType=OUTPUT,
-				enum PinSpeed pinSpeed=MEDIUM,enum Pull::PullType pullType=Pull::DOWN);
-		void setPeripheralType(uint32_t alternate);//better will be make enum with alternate types
+				enum PinSpeed pinSpeed=MEDIUM,enum Pull::PullType pullType=Pull::DOWN,
+				enum Periph::Periph periphType=Periph::none);
 		void write(bool state);//tested
 		bool read();//tested
 		void toggle();//tested

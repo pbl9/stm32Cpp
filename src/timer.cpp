@@ -3,6 +3,7 @@
 Time::TimeBase::TimeBase(TIM_TypeDef *timer_instance,uint32_t systemFrequency,
 		uint32_t frequency,uint32_t counterPeriod){
 	timer=timer_instance;
+	period=counterPeriod;
 	enableTimClock();
 	uint32_t prescalerValue=(systemFrequency/frequency)/counterPeriod;
 	LL_TIM_SetPrescaler(timer, prescalerValue-1);

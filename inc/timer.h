@@ -15,6 +15,7 @@ class TimeBase{
 	private:
 		void enableTimClock();
 	protected:
+		uint32_t period;
 		TIM_TypeDef* timer;
 	public:
 		TimeBase(TIM_TypeDef *timer_instance,uint32_t systemFrequency,
