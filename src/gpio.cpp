@@ -1,9 +1,8 @@
 #include "gpio.h"
 
 
-IO::GPIO::GPIO(enum Port::port port,uint8_t pinNumber,enum PinType pinType,
-		enum PinSpeed pinSpeed,enum Pull::PullType pullType,
-		enum Periph::Periph periphType){
+IO::GPIO::GPIO(Port port,uint8_t pinNumber,PinType pinType,
+		PinSpeed pinSpeed,PullType pullType,Periph periphType){
 	this->pinNumber=pinNumber;
 	if(port==Port::A){ gpio=GPIOA; }
 	else if(port==Port::B){ gpio=GPIOB; }
@@ -16,18 +15,21 @@ IO::GPIO::GPIO(enum Port::port port,uint8_t pinNumber,enum PinType pinType,
 	inputState=false;
 	enablePortClock();
 	pinMask=1U<<(this->pinNumber);
-	if(this->pinType == OUTPUT){
+	if(this->pinType == PinType::Output){
 		LL_GPIO_SetPinMode(gpio,pinMask,LL_GPIO_MODE_OUTPUT);
 		LL_GPIO_SetPinOutputType(gpio,pinMask,LL_GPIO_OUTPUT_PUSHPULL);
-	}else if(this->pinType == INPUT){
+	}else if(this->pinType == PinType::Input){
 		LL_GPIO_SetPinMode(gpio,pinMask,LL_GPIO_MODE_INPUT);
-		setPull(pullType);
-	}else if(this->pinType == ANALOG){
+	}else if(this->pinType == PinType::Analog){
 		LL_GPIO_SetPinMode(gpio,pinMask,LL_GPIO_MODE_ANALOG);
-	}else if(this->pinType == PERIPH){
+	}else if(this->pinType == PinType::Periph){
 		LL_GPIO_SetPinMode(gpio,pinMask,LL_GPIO_MODE_ALTERNATE);
+		if(periphType==Periph::i2c1 || periphType==Periph::i2c2){
+			LL_GPIO_SetPinOutputType(gpio,pinMask,LL_GPIO_OUTPUT_OPENDRAIN);
+		}
 		setPeripheralType(periphTypeToLL(periphType));
 	}
+	setPull(pullType);
 	setSpeed(pinSpeed);
 }
 void IO::GPIO::enablePortClock(){
@@ -39,31 +41,31 @@ void IO::GPIO::enablePortClock(){
 }
 void IO::GPIO::setSpeed(enum PinSpeed pinSpeed){
 	uint32_t llPinSpeed=0;
-	if(pinSpeed==LOW){ llPinSpeed=LL_GPIO_SPEED_FREQ_LOW; }
-	else if(pinSpeed==MEDIUM) { llPinSpeed=LL_GPIO_SPEED_FREQ_MEDIUM; }
-	else if(pinSpeed==HIGH) { llPinSpeed=LL_GPIO_SPEED_FREQ_HIGH; }
-	else if(pinSpeed==VERY_HIGH) { llPinSpeed=LL_GPIO_SPEED_FREQ_VERY_HIGH; }
+	if(pinSpeed==PinSpeed::Low){ llPinSpeed=LL_GPIO_SPEED_FREQ_LOW; }
+	else if(pinSpeed==PinSpeed::Medium) { llPinSpeed=LL_GPIO_SPEED_FREQ_MEDIUM; }
+	else if(pinSpeed==PinSpeed::High) { llPinSpeed=LL_GPIO_SPEED_FREQ_HIGH; }
+	else if(pinSpeed==PinSpeed::VeryHigh) { llPinSpeed=LL_GPIO_SPEED_FREQ_VERY_HIGH; }
 	LL_GPIO_SetPinSpeed(gpio,pinMask,llPinSpeed);
 }
 void IO::GPIO::write(bool state){
-	if(pinType!=OUTPUT)
+	if(pinType!=PinType::Output)
 		return;
 	state ? LL_GPIO_SetOutputPin(gpio,pinMask) : LL_GPIO_ResetOutputPin(gpio,pinMask);
 }
 void IO::GPIO::toggle(){
-	if(pinType!=OUTPUT)
+	if(pinType!=PinType::Output)
 		return;
 	LL_GPIO_TogglePin(gpio,pinMask);
 }
-void IO::GPIO::setPull(enum Pull::PullType pullType){
+void IO::GPIO::setPull(PullType pullType){
 	uint32_t llPullType;
-	if(pullType==Pull::DOWN){ llPullType=LL_GPIO_PULL_DOWN; }
-	else if(pullType==Pull::UP) { llPullType=LL_GPIO_PULL_UP; }
+	if(pullType==PullType::Down){ llPullType=LL_GPIO_PULL_DOWN; }
+	else if(pullType==PullType::Up) { llPullType=LL_GPIO_PULL_UP; }
 	else { llPullType=LL_GPIO_PULL_NO; }
 	LL_GPIO_SetPinPull(gpio,pinMask,llPullType);
 }
 bool IO::GPIO::read(){
-	if(pinType!=INPUT)
+	if(pinType!=PinType::Input)
 		return false;
 	uint16_t inputReg=gpio->IDR;
 	inputReg&=pinMask;
@@ -73,7 +75,7 @@ bool IO::GPIO::read(){
 		return false;
 	}
 }
-uint32_t IO::GPIO::periphTypeToLL(Periph::Periph periph){
+uint32_t IO::GPIO::periphTypeToLL(Periph periph){
 	uint32_t llPeriphPinType=0;
 	if(periph==Periph::usart1){ llPeriphPinType=LL_GPIO_AF_7; }
 	else if(periph==Periph::usart2) { llPeriphPinType=LL_GPIO_AF_7; }
